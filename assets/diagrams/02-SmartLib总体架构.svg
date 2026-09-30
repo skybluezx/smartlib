@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="850" viewBox="0 0 1400 850" role="img" aria-labelledby="title desc">
+  <title id="title">SmartLib 智能知识平台总体架构</title>
+  <desc id="desc">平台由六个逻辑层、四个核心模块和一组贯穿各层的治理要求组成。应用反馈返回治理过程，持续更新对象、画像和知识关系。</desc>
+  <defs>
+    <style>
+      .title{font:700 34px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#17213D}
+      .subtitle{font:400 18px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#667085}
+      .mod{font:700 20px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+      .layer{font:700 22px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#17213D}
+      .body{font:400 17px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#344054}
+      .small{font:400 15px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#667085}
+      .white{fill:#FFFFFF}
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#6656D6"/>
+    </marker>
+  </defs>
+
+  <rect width="1400" height="850" fill="#F7F8FC"/>
+  <text x="48" y="52" class="title">SmartLib 智能知识平台总体架构</text>
+  <text x="48" y="82" class="subtitle">六个逻辑层说明知识如何形成和使用，四个模块承担建设与运行</text>
+
+  <!-- Module column -->
+  <rect x="48" y="116" width="222" height="90" rx="16" fill="#443991"/>
+  <text x="159" y="151" text-anchor="middle" class="mod white">SmartLib</text>
+  <text x="159" y="180" text-anchor="middle" class="mod white">Knowledge Services</text>
+
+  <rect x="48" y="218" width="222" height="90" rx="16" fill="#D97717"/>
+  <text x="159" y="253" text-anchor="middle" class="mod white">SmartLib</text>
+  <text x="159" y="282" text-anchor="middle" class="mod white">Intelligence</text>
+
+  <rect x="48" y="320" width="222" height="90" rx="16" fill="#2F6FB9"/>
+  <text x="159" y="355" text-anchor="middle" class="mod white">SmartLib</text>
+  <text x="159" y="384" text-anchor="middle" class="mod white">Knowledge Network</text>
+
+  <rect x="48" y="422" width="222" height="294" rx="16" fill="#14766E"/>
+  <text x="159" y="550" text-anchor="middle" class="mod white">SmartLib DataHub</text>
+  <text x="159" y="582" text-anchor="middle" class="body white">智能数据平台</text>
+
+  <!-- Six layers -->
+  <rect x="290" y="116" width="814" height="90" rx="16" fill="#EEEAFB" stroke="#9C8BE5" stroke-width="2"/>
+  <text x="322" y="151" class="layer">应用与服务层</text>
+  <text x="322" y="181" class="body">四个应用群 · 五类服务入口 · 传统交互与智能体交互 · 业务反馈</text>
+
+  <rect x="290" y="218" width="814" height="90" rx="16" fill="#FFF1E2" stroke="#E6A25C" stroke-width="2"/>
+  <text x="322" y="253" class="layer">人工智能层</text>
+  <text x="322" y="283" class="body">文献解析 · 混合检索 · RAG · 分析计算 · 模型服务 · 工具调用与任务管理</text>
+
+  <rect x="290" y="320" width="814" height="90" rx="16" fill="#E8F1FF" stroke="#7FA9DC" stroke-width="2"/>
+  <text x="322" y="355" class="layer">数据知识化层</text>
+  <text x="322" y="385" class="body">对象模型 · 规范术语 · 知识关系 · 时间与证据 · 待确认关系管理</text>
+
+  <rect x="290" y="422" width="814" height="90" rx="16" fill="#E3F4F1" stroke="#69B8AE" stroke-width="2"/>
+  <text x="322" y="457" class="layer">数据智能与画像层</text>
+  <text x="322" y="487" class="body">统一对象 · 事实画像 · 分析画像 · 面向具体任务的评价 · 群体分析</text>
+
+  <rect x="290" y="524" width="814" height="90" rx="16" fill="#EDF5F3" stroke="#91C8C0" stroke-width="2"/>
+  <text x="322" y="559" class="layer">数据治理层</text>
+  <text x="322" y="589" class="body">数据接入 · 标准映射 · 质量检查 · 身份统一 · 来源记录 · 更新同步</text>
+
+  <rect x="290" y="626" width="814" height="90" rx="16" fill="#FFFFFF" stroke="#B9C0CE" stroke-width="2"/>
+  <text x="322" y="661" class="layer">多源数据与存储层</text>
+  <rect x="322" y="680" width="218" height="22" rx="11" fill="#14766E"/>
+  <text x="431" y="696" text-anchor="middle" class="small white">图书馆电子资源（核心）</text>
+  <rect x="550" y="680" width="170" height="22" rx="11" fill="#DDEBFA"/>
+  <text x="635" y="696" text-anchor="middle" class="small" fill="#245B9A">学校业务数据</text>
+  <rect x="730" y="680" width="162" height="22" rx="11" fill="#FFF1E2"/>
+  <text x="811" y="696" text-anchor="middle" class="small" fill="#A65309">外部学术数据</text>
+  <rect x="902" y="680" width="170" height="22" rx="11" fill="#E9EDF4"/>
+  <text x="987" y="696" text-anchor="middle" class="small" fill="#344054">服务反馈与文件</text>
+
+  <!-- Cross-cutting governance -->
+  <rect x="1126" y="116" width="226" height="600" rx="18" fill="#17213D"/>
+  <text x="1239" y="154" text-anchor="middle" class="mod white">贯穿各层的管理要求</text>
+  <line x1="1160" y1="172" x2="1318" y2="172" stroke="#667085" stroke-width="2"/>
+  <g class="body white">
+    <circle cx="1169" cy="213" r="5" fill="#8ED8CF"/><text x="1188" y="219">用户身份与权限</text>
+    <circle cx="1169" cy="264" r="5" fill="#8ED8CF"/><text x="1188" y="270">电子资源许可</text>
+    <circle cx="1169" cy="315" r="5" fill="#8ED8CF"/><text x="1188" y="321">数据质量与责任</text>
+    <circle cx="1169" cy="366" r="5" fill="#8ED8CF"/><text x="1188" y="372">来源与处理记录</text>
+    <circle cx="1169" cy="417" r="5" fill="#8ED8CF"/><text x="1188" y="423">数据安全保护</text>
+    <circle cx="1169" cy="468" r="5" fill="#8ED8CF"/><text x="1188" y="474">操作与模型审计</text>
+    <circle cx="1169" cy="519" r="5" fill="#8ED8CF"/><text x="1188" y="525">人工确认</text>
+    <circle cx="1169" cy="570" r="5" fill="#8ED8CF"/><text x="1188" y="576">持续更新与运行</text>
+  </g>
+  <rect x="1154" y="615" width="170" height="70" rx="12" fill="#27334E"/>
+  <text x="1239" y="644" text-anchor="middle" class="small white">统一身份、权限与网关</text>
+  <text x="1239" y="671" text-anchor="middle" class="small white">共同服务四个模块</text>
+
+  <!-- Flow and feedback -->
+  <path d="M1080 161 H1112 V569 H1086" fill="none" stroke="#6656D6" stroke-width="3" stroke-dasharray="9 8" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrow)"/>
+  <rect x="418" y="753" width="558" height="54" rx="27" fill="#EEEAFB" stroke="#9C8BE5" stroke-width="2"/>
+  <text x="697" y="786" text-anchor="middle" class="mod" fill="#443991">应用反馈返回治理过程，更新对象、画像和知识关系</text>
+
+  <text x="48" y="816" class="small">模块通过标准接口协同，共同使用学校统一身份、权限和数据规范</text>
+</svg>

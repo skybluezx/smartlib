@@ -1,0 +1,16 @@
+.sg-research-governance { width: 100%; margin-inline: auto; color: #161616; }
+.sg-research-governance h1 { font-size: 2rem; margin-bottom: 1rem; }
+.sg-research-governance h2 { font-size: 1.35rem; margin-bottom: 1rem; }
+.sg-research-governance h3 { font-size: 1.1rem; margin-block: 1rem; }
+.sg-research-governance p { line-height: 1.6; margin-block: .75rem; color: #525252; }
+.sg-research-governance section { background: white; padding: 1.5rem; margin-block: 1rem; min-width: 0; }
+.sg-research-governance nav { display: flex; flex-wrap: wrap; border-bottom: 1px solid #c6c6c6; }
+.sg-research-governance button { background: #0f62fe; color: white; border: 1px solid #0f62fe; padding: .7rem 1rem; cursor: pointer; margin: .35rem; font: inherit; }
+.sg-research-governance button:disabled { background: #c6c6c6; border-color: #c6c6c6; color: #525252; cursor: not-allowed; }
+.sg-research-governance nav button { background: transparent; color: #525252; border: 0; border-bottom: 3px solid transparent; }
+.sg-research-governance nav button[aria-pressed=true] { color: #161616; border-bottom-color: #0f62fe; }
+.sg-research-governance label { display: inline-flex; flex-direction: column; gap: .5rem; margin: .5rem; max-width: 100%; }
+.sg-research-governance input:not([type=checkbox]), .sg-research-governance select, .sg-research-governance textarea { font: inherit; padding: .7rem; background: #f4f4f4; border: 0; border-bottom: 1px solid #8d8d8d; max-width: 100%; }
+.sg-research-governance :focus-visible { outline: 2px solid #0f62fe; outline-offset: 2px; }
+.sg-governance-queue { max-height: 36rem; overflow-y: auto; overscroll-behavior: contain; border-top: 1px solid #c6c6c6; margin-top: 1rem; padding-inline: .5rem; }
+.sg-governance-queue label { display: flex; flex-direction: row; align-items: center; }

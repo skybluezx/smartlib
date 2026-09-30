@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="860" viewBox="0 0 1400 860" role="img" aria-labelledby="title desc">
+  <title id="title">应用群、具体应用与服务入口</title>
+  <desc id="desc">四个应用群建立在统一公共能力之上，五类用户通过不同服务入口组合使用相关应用。服务入口不是独立应用。</desc>
+  <defs>
+    <style>
+      .title{font:700 34px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#17213D}
+      .subtitle{font:400 18px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif;fill:#667085}
+      .h1{font:700 22px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+      .h2{font:700 18px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+      .body{font:400 16px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+      .small{font:400 14px 'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif}
+      .white{fill:#FFFFFF}.navy{fill:#17213D}.muted{fill:#667085}
+    </style>
+  </defs>
+
+  <rect width="1400" height="860" fill="#F7F8FC"/>
+  <text x="48" y="52" class="title">应用群、具体应用与服务入口</text>
+  <text x="48" y="82" class="subtitle">应用群按核心对象和业务问题组织，服务入口根据用户职责组合相关应用</text>
+
+  <rect x="48" y="106" width="1304" height="58" rx="16" fill="#17213D"/>
+  <text x="700" y="142" text-anchor="middle" class="h2 white">公共能力：统一对象与画像　·　知识关系与证据　·　检索与智能体　·　身份权限与来源追溯</text>
+
+  <!-- Column headers: application groups -->
+  <rect x="48" y="184" width="292" height="166" rx="18" fill="#E9EDF4" stroke="#B9C0CE" stroke-width="2"/>
+  <text x="194" y="224" text-anchor="middle" class="h1 navy">五类服务入口</text>
+  <text x="194" y="258" text-anchor="middle" class="body muted">不是五套独立系统</text>
+  <text x="194" y="288" text-anchor="middle" class="body muted">而是按职责重新组合</text>
+  <text x="194" y="318" text-anchor="middle" class="body muted">应用、数据与交互方式</text>
+
+  <rect x="360" y="184" width="230" height="166" rx="18" fill="#443991"/>
+  <text x="475" y="224" text-anchor="middle" class="h1 white">学者星图</text>
+  <text x="475" y="257" text-anchor="middle" class="body white">学者画像与学术档案</text>
+  <text x="475" y="285" text-anchor="middle" class="body white">人才发现与工作支持</text>
+  <text x="475" y="313" text-anchor="middle" class="body white">科研合作与团队发现</text>
+  <rect x="405" y="327" width="140" height="7" rx="3.5" fill="#B9ADFF"/>
+
+  <rect x="610" y="184" width="230" height="166" rx="18" fill="#14766E"/>
+  <text x="725" y="224" text-anchor="middle" class="h1 white">知源智研</text>
+  <text x="725" y="257" text-anchor="middle" class="body white">跨库资源发现</text>
+  <text x="725" y="285" text-anchor="middle" class="body white">文献筛选与证据整理</text>
+  <text x="725" y="313" text-anchor="middle" class="body white">图书馆学术智能体</text>
+  <rect x="655" y="327" width="140" height="7" rx="3.5" fill="#8ED8CF"/>
+
+  <rect x="860" y="184" width="230" height="166" rx="18" fill="#2F6FB9"/>
+  <text x="975" y="224" text-anchor="middle" class="h1 white">学科罗盘</text>
+  <text x="975" y="257" text-anchor="middle" class="body white">人才与成果结构分析</text>
+  <text x="975" y="285" text-anchor="middle" class="body white">优势、短板与对标研判</text>
+  <text x="975" y="313" text-anchor="middle" class="body white">规划与资源配置支持</text>
+  <rect x="905" y="327" width="140" height="7" rx="3.5" fill="#A9C9EF"/>
+
+  <rect x="1110" y="184" width="242" height="166" rx="18" fill="#D97717"/>
+  <text x="1231" y="224" text-anchor="middle" class="h1 white">成果智桥</text>
+  <text x="1231" y="257" text-anchor="middle" class="body white">成果与需求汇总</text>
+  <text x="1231" y="285" text-anchor="middle" class="body white">候选转化机会发现</text>
+  <text x="1231" y="313" text-anchor="middle" class="body white">人工确认与协同跟踪</text>
+  <rect x="1161" y="327" width="140" height="7" rx="3.5" fill="#FFD1A2"/>
+
+  <!-- Matrix row backgrounds -->
+  <rect x="48" y="370" width="1304" height="70" rx="14" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.5"/>
+  <rect x="48" y="450" width="1304" height="70" rx="14" fill="#F2F4F7"/>
+  <rect x="48" y="530" width="1304" height="70" rx="14" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.5"/>
+  <rect x="48" y="610" width="1304" height="70" rx="14" fill="#F2F4F7"/>
+  <rect x="48" y="690" width="1304" height="70" rx="14" fill="#FFFFFF" stroke="#D0D5DD" stroke-width="1.5"/>
+
+  <!-- Vertical separators -->
+  <line x1="350" y1="370" x2="350" y2="760" stroke="#D0D5DD" stroke-width="1.5"/>
+  <line x1="600" y1="370" x2="600" y2="760" stroke="#D0D5DD" stroke-width="1.5"/>
+  <line x1="850" y1="370" x2="850" y2="760" stroke="#D0D5DD" stroke-width="1.5"/>
+  <line x1="1100" y1="370" x2="1100" y2="760" stroke="#D0D5DD" stroke-width="1.5"/>
+
+  <!-- Row labels -->
+  <text x="72" y="411" class="h2 navy">学校领导综合决策入口</text>
+  <text x="72" y="491" class="h2 navy">职能部门业务工作台</text>
+  <text x="72" y="571" class="h2 navy">学院及附属单位管理入口</text>
+  <text x="72" y="651" class="h2 navy">学者与读者个人工作台</text>
+  <text x="72" y="731" class="h2 navy">图书馆知识服务与运行入口</text>
+
+  <!-- Matrix cells: school leadership -->
+  <rect x="410" y="389" width="130" height="34" rx="17" fill="#443991"/><text x="475" y="412" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="660" y="389" width="130" height="34" rx="17" fill="#E3F4F1"/><text x="725" y="412" text-anchor="middle" class="body" fill="#0E5D56">按需使用</text>
+  <rect x="910" y="389" width="130" height="34" rx="17" fill="#2F6FB9"/><text x="975" y="412" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="1166" y="389" width="130" height="34" rx="17" fill="#D97717"/><text x="1231" y="412" text-anchor="middle" class="body white">重点使用</text>
+
+  <!-- Functional departments -->
+  <rect x="410" y="469" width="130" height="34" rx="17" fill="#443991"/><text x="475" y="492" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="660" y="469" width="130" height="34" rx="17" fill="#E3F4F1"/><text x="725" y="492" text-anchor="middle" class="body" fill="#0E5D56">按需使用</text>
+  <rect x="910" y="469" width="130" height="34" rx="17" fill="#2F6FB9"/><text x="975" y="492" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="1166" y="469" width="130" height="34" rx="17" fill="#D97717"/><text x="1231" y="492" text-anchor="middle" class="body white">重点使用</text>
+
+  <!-- Colleges -->
+  <rect x="410" y="549" width="130" height="34" rx="17" fill="#443991"/><text x="475" y="572" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="660" y="549" width="130" height="34" rx="17" fill="#14766E"/><text x="725" y="572" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="910" y="549" width="130" height="34" rx="17" fill="#2F6FB9"/><text x="975" y="572" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="1166" y="549" width="130" height="34" rx="17" fill="#D97717"/><text x="1231" y="572" text-anchor="middle" class="body white">重点使用</text>
+
+  <!-- Scholars/readers -->
+  <rect x="410" y="629" width="130" height="34" rx="17" fill="#443991"/><text x="475" y="652" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="660" y="629" width="130" height="34" rx="17" fill="#14766E"/><text x="725" y="652" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="910" y="629" width="130" height="34" rx="17" fill="#E8F1FF"/><text x="975" y="652" text-anchor="middle" class="body" fill="#245B9A">按需使用</text>
+  <rect x="1166" y="629" width="130" height="34" rx="17" fill="#D97717"/><text x="1231" y="652" text-anchor="middle" class="body white">重点使用</text>
+
+  <!-- Library -->
+  <rect x="410" y="709" width="130" height="34" rx="17" fill="#EEEAFB"/><text x="475" y="732" text-anchor="middle" class="body" fill="#443991">按需使用</text>
+  <rect x="660" y="709" width="130" height="34" rx="17" fill="#14766E"/><text x="725" y="732" text-anchor="middle" class="body white">重点使用</text>
+  <rect x="910" y="709" width="130" height="34" rx="17" fill="#E8F1FF"/><text x="975" y="732" text-anchor="middle" class="body" fill="#245B9A">按需使用</text>
+  <rect x="1166" y="709" width="130" height="34" rx="17" fill="#FFF1E2"/><text x="1231" y="732" text-anchor="middle" class="body" fill="#A65309">按需使用</text>
+
+  <!-- Interaction footer -->
+  <rect x="48" y="786" width="634" height="46" rx="23" fill="#E9EDF4"/>
+  <text x="365" y="816" text-anchor="middle" class="body navy">传统交互：检索 · 筛选 · 浏览 · 关系网络 · 统计分析 · 管理页面</text>
+  <rect x="702" y="786" width="650" height="46" rx="23" fill="#EEEAFB"/>
+  <text x="1027" y="816" text-anchor="middle" class="body" fill="#443991">智能体交互：理解任务 · 查找资料 · 调用工具 · 整理证据 · 连续处理</text>
+</svg>

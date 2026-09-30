@@ -1,0 +1,14 @@
+services:
+  research-classification-worker:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    command: ["python", "-m", "smartlib_platform.knowledge.research_worker"]
+    environment:
+      SMARTLIB_DATABASE_URL: ${SMARTLIB_DATABASE_URL:?Use the configured local API database URL}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    restart: unless-stopped
+    networks:
+      - smartlib-internal
+networks:
+  smartlib-internal:
+    external: true
+    name: ${SMARTLIB_RESEARCH_NETWORK:-smartlib_smartlib-internal}

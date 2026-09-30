@@ -1,0 +1,10 @@
+.sg-publication-journal-metrics { margin-block: 1.5rem; min-width: 0; }
+.sg-journal-detail-note { display: flex; align-items: flex-start; gap: .5rem; color: #6f6f6f; line-height: 1.6; }
+.sg-journal-detail-note svg { flex: 0 0 auto; margin-top: .2rem; color: #007d79; }
+.sg-journal-detail-scroll { max-height: 28rem; overflow: auto; margin-top: 1.25rem; }
+.sg-journal-detail-scroll table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; font-size: .875rem; }
+.sg-journal-detail-scroll th { background: #e8e8e8; position: sticky; top: 0; z-index: 1; font-weight: 600; }
+.sg-journal-detail-scroll th, .sg-journal-detail-scroll td { padding: 1rem; border-bottom: 1px solid #e0e0e0; vertical-align: top; line-height: 1.5; }
+.sg-journal-detail-scroll td:first-child { white-space: nowrap; }
+.sg-journal-detail-scroll small { display: block; color: #6f6f6f; margin-top: .25rem; }
+.sg-journal-detail-empty, .sg-journal-detail-footnote { margin-top: 1rem; color: #6f6f6f; font-size: .875rem; line-height: 1.6; }

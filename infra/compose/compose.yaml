@@ -1,0 +1,827 @@
+name: smartlib
+
+services:
+  postgres:
+    image: ${SMARTLIB_POSTGRES_IMAGE:-postgres:18.6-alpine}
+    environment:
+      POSTGRES_DB: ${SMARTLIB_DB_NAME:-smartlib}
+      POSTGRES_USER: ${SMARTLIB_DB_BOOTSTRAP_USER:-smartlib_bootstrap}
+      POSTGRES_PASSWORD: ${SMARTLIB_DB_BOOTSTRAP_PASSWORD:?Set SMARTLIB_DB_BOOTSTRAP_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C --auth-host=scram-sha-256"
+    volumes:
+      - smartlib-postgres:/var/lib/postgresql
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      start_period: 10s
+      retries: 12
+    networks:
+      - smartlib-internal
+
+  bootstrap-runtime-roles:
+    image: ${SMARTLIB_POSTGRES_IMAGE:-postgres:18.6-alpine}
+    environment:
+      PGHOST: postgres
+      PGUSER: ${SMARTLIB_DB_BOOTSTRAP_USER:-smartlib_bootstrap}
+      PGPASSWORD: ${SMARTLIB_DB_BOOTSTRAP_PASSWORD:?Set SMARTLIB_DB_BOOTSTRAP_PASSWORD}
+      PGDATABASE: ${SMARTLIB_DB_NAME:-smartlib}
+    command: ["sh", "/provision/bootstrap-runtime-roles.sh"]
+    volumes:
+      - ../../database/provision:/provision:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  migrate:
+    image: ${SMARTLIB_FLYWAY_IMAGE:-flyway/flyway:13.0.0-alpine}
+    environment:
+      FLYWAY_URL: jdbc:postgresql://postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      FLYWAY_USER: ${SMARTLIB_DB_BOOTSTRAP_USER:-smartlib_bootstrap}
+      FLYWAY_PASSWORD: ${SMARTLIB_DB_BOOTSTRAP_PASSWORD:?Set SMARTLIB_DB_BOOTSTRAP_PASSWORD}
+      FLYWAY_LOCATIONS: filesystem:/flyway/sql
+      FLYWAY_CONNECT_RETRIES: 30
+      FLYWAY_VALIDATE_MIGRATION_NAMING: "true"
+    command: migrate
+    volumes:
+      - ../../database/migrations:/flyway/sql:ro
+    depends_on:
+      bootstrap-runtime-roles:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  provision-api-role:
+    image: ${SMARTLIB_POSTGRES_IMAGE:-postgres:18.6-alpine}
+    environment:
+      PGHOST: postgres
+      PGUSER: ${SMARTLIB_DB_BOOTSTRAP_USER:-smartlib_bootstrap}
+      PGPASSWORD: ${SMARTLIB_DB_BOOTSTRAP_PASSWORD:?Set SMARTLIB_DB_BOOTSTRAP_PASSWORD}
+      PGDATABASE: ${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DB_API_PASSWORD: ${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}
+      SMARTLIB_DB_PROJECTION_PASSWORD: ${SMARTLIB_DB_PROJECTION_PASSWORD:?Set SMARTLIB_DB_PROJECTION_PASSWORD}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command: ["sh", "/provision/provision-api-role.sh"]
+    volumes:
+      - ../../database/provision:/provision:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  minio:
+    build:
+      context: ../minio-community
+      dockerfile: Dockerfile
+      args:
+        GO_IMAGE: ${SMARTLIB_GO_IMAGE:-public.ecr.aws/docker/library/golang:1.24.8-alpine}
+        RUNTIME_IMAGE: ${SMARTLIB_MINIO_RUNTIME_IMAGE:-public.ecr.aws/docker/library/alpine:3.22}
+        MINIO_SOURCE_REF: ${SMARTLIB_MINIO_SOURCE_REF:-7aac2a2c5b7c882e68c1ce017d8256be2feea27f}
+        GO_PROXY: ${SMARTLIB_GO_PROXY:-https://proxy.golang.org,direct}
+    image: smartlib/minio-community:${SMARTLIB_MINIO_IMAGE_TAG:-7aac2a2}
+    environment:
+      MINIO_ROOT_USER: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      MINIO_BROWSER_REDIRECT_URL: ${SMARTLIB_MINIO_BROWSER_REDIRECT_URL:-http://localhost:19001}
+    command: ["server", "/data", "--console-address", ":9001"]
+    volumes:
+      - smartlib-minio:/data
+    ports:
+      - "${SMARTLIB_MINIO_API_PORT:-19000}:9000"
+      - "${SMARTLIB_MINIO_CONSOLE_PORT:-19001}:9001"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      start_period: 15s
+      retries: 12
+    networks:
+      - smartlib-internal
+
+  minio-init:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    environment:
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+      SMARTLIB_REFERENCE_DATA_BUCKET: ${SMARTLIB_REFERENCE_DATA_BUCKET:-smartlib-reference-data}
+    command: ["python", "/smartlib-minio/bootstrap.py"]
+    volumes:
+      - ../minio-community:/smartlib-minio:ro
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-scholar-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_controlled_scholars.py
+      - --package
+      - /smartlib-imports/2026-nsf-representative-publications-v1/scholars.json
+      - --apply
+      - --rebuild-affiliations
+    volumes:
+      - ../../data/imports:/smartlib-imports:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-discipline-taxonomy-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_REFERENCE_DATA_BUCKET: ${SMARTLIB_REFERENCE_DATA_BUCKET:-smartlib-reference-data}
+    command:
+      - python
+      - /app/scripts/import_discipline_taxonomies.py
+      - --package
+      - /smartlib-imports/discipline-taxonomies-2026-09-04/taxonomies.json
+      - --source-root
+      - /smartlib-discipline-source
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+      - ../../outputs/reference_data_preview/discipline_taxonomies/2026-09-04:/smartlib-discipline-source:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-discipline-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_publication_discipline_relations.py
+      - --review
+      - /smartlib-discipline-review/论文全文学科对应_待确认.json
+      - --report
+      - /smartlib-discipline-review/论文全文学科关系_导入报告.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../outputs/2026_nsf_publication_discipline_review:/smartlib-discipline-review
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-journal-metric-match:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/match_publication_journal_metrics.py
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-secondary-discipline-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_publication_secondary_discipline_relations.py
+      - --review
+      - /smartlib-discipline-review/论文全文学科对应_待确认.json
+      - --taxonomy-package
+      - /smartlib-imports/discipline-taxonomies-2026-09-04/taxonomies.json
+      - --report
+      - /smartlib-discipline-review/论文一对多学科关系_导入报告.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+      - ../../outputs/2026_nsf_publication_discipline_review:/smartlib-discipline-review
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-nsf-project-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_controlled_nsf_projects.py
+      - --scholars-package
+      - /smartlib-imports/2026-nsf-representative-publications-v1/scholars.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-author-affiliation-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+    command:
+      - python
+      - /app/scripts/import_fulltext_authors_and_affiliations.py
+      - --report
+      - /smartlib-outputs/2026_nsf_fulltext_author_affiliation_import/applied.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../outputs:/smartlib-outputs
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_controlled_publications.py
+      - --package
+      - /smartlib-imports/2026-nsf-representative-publications-v1/publications.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-verification-apply:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/apply_publication_verification.py
+      - --results
+      - /smartlib-verification/2026-nsf-representative-publications-v1/automatic-verification.json
+      - --package
+      - /smartlib-imports/2026-nsf-representative-publications-v1/publications.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+      - ../../data/verification:/smartlib-verification:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-publication-three-layer:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/run_three_layer_publication_verification.py
+      - --package
+      - /smartlib-imports/2026-nsf-representative-publications-v1/publications.json
+      - --automatic
+      - /smartlib-verification/2026-nsf-representative-publications-v1/automatic-verification.json
+      - --cache-dir
+      - /smartlib-verification/2026-nsf-representative-publications-v1/cache
+      - --output
+      - /smartlib-verification/2026-nsf-representative-publications-v1/three-layer-verification.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/imports:/smartlib-imports:ro
+      - ../../data/verification:/smartlib-verification
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-match:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment: &fulltext-ingestion-environment
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+      SMARTLIB_FULLTEXT_MAX_BYTES: ${SMARTLIB_FULLTEXT_MAX_BYTES:-104857600}
+      SMARTLIB_BATCH_FULLTEXT_MAX_BYTES: ${SMARTLIB_BATCH_FULLTEXT_MAX_BYTES:-367001600}
+    command:
+      - python
+      - /app/scripts/run_fulltext_ingestion.py
+      - --manifest
+      - /smartlib-fulltext-source/manifest.json
+      - --pdf-directory
+      - /smartlib-fulltext-source/77篇公开全文PDF/PDF
+      - --verification
+      - /smartlib-fulltext-source/77篇公开全文PDF/下载状态.json
+      - --report
+      - /smartlib-fulltext-reports/match-report.json
+      - --mode
+      - match
+    volumes: &fulltext-ingestion-volumes
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../outputs/2026_nsf_fulltext_download:/smartlib-fulltext-source:ro
+      - ../../data/fulltext-ingestion:/smartlib-fulltext-reports
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-ingestion:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment: *fulltext-ingestion-environment
+    command:
+      - python
+      - /app/scripts/run_fulltext_ingestion.py
+      - --manifest
+      - /smartlib-fulltext-source/manifest.json
+      - --pdf-directory
+      - /smartlib-fulltext-source/77篇公开全文PDF/PDF
+      - --verification
+      - /smartlib-fulltext-source/77篇公开全文PDF/下载状态.json
+      - --report
+      - /smartlib-fulltext-reports/ingestion-report.json
+      - --mode
+      - ingest
+      - --apply
+    volumes: *fulltext-ingestion-volumes
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-funding-review:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+      SMARTLIB_FUNDING_OUTPUT: /smartlib-outputs/2026_nsf_fulltext_funding_zone_first_v3
+    command: ["python", "/app/scripts/extract_publication_funding_review.py"]
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../apps/platform-api/src:/app/src:ro
+      - ../../outputs:/smartlib-outputs
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-incites-funding-import:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/import_incites_publication_funding.py
+      - --resolved
+      - /smartlib-outputs/incites_funding_comparison_2026-09-04/02_InCites关系逐条对照.csv
+      - --ambiguous
+      - /smartlib-outputs/incites_funding_comparison_2026-09-04/06_系统重复论文对象导致的匹配歧义.csv
+      - --report
+      - /smartlib-outputs/incites_funding_comparison_2026-09-04/07_InCites权威基线导入报告.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../apps/platform-api/src:/app/src:ro
+      - ../../outputs:/smartlib-outputs
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-preverification:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/run_fulltext_preverification.py
+      - --matches
+      - /smartlib-archive-results/matches.json
+      - --reported-root
+      - /Volumes/张蕾历年工作备份
+      - --archive-root
+      - /smartlib-archive
+      - --report
+      - /smartlib-archive-results/preverification-report.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/archive-fulltext-discovery:/smartlib-archive-results
+      - ${SMARTLIB_ARCHIVE_FULLTEXT_SOURCE:-/Volumes/张蕾历年工作备份}:/smartlib-archive:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-fulltext-author-verification:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/run_fulltext_author_verification.py
+      - --matches
+      - /smartlib-archive-results/matches.json
+      - --reported-root
+      - /Volumes/张蕾历年工作备份
+      - --archive-root
+      - /smartlib-archive
+      - --report
+      - /smartlib-archive-results/author-verification-report.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../data/archive-fulltext-discovery:/smartlib-archive-results
+      - ${SMARTLIB_ARCHIVE_FULLTEXT_SOURCE:-/Volumes/张蕾历年工作备份}:/smartlib-archive:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-archive-fulltext-staging:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_S3_ENDPOINT_URL: http://minio:9000
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+      SMARTLIB_BATCH_FULLTEXT_MAX_BYTES: ${SMARTLIB_BATCH_FULLTEXT_MAX_BYTES:-367001600}
+    command:
+      - python
+      - /app/scripts/stage_archive_fulltexts.py
+      - --matches
+      - /smartlib-archive-results/matches.json
+      - --reported-root
+      - /Volumes/张蕾历年工作备份
+      - --archive-root
+      - /smartlib-archive
+      - --report
+      - /smartlib-archive-results/object-storage-staging-report.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../apps/platform-api/src:/app/src:ro
+      - ../../data/archive-fulltext-discovery:/smartlib-archive-results
+      - ${SMARTLIB_ARCHIVE_FULLTEXT_SOURCE:-/Volumes/张蕾历年工作备份}:/smartlib-archive:ro
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  controlled-staged-fulltext-promotion:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["controlled-import"]
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+    command:
+      - python
+      - /app/scripts/promote_staged_fulltexts.py
+      - --report
+      - /smartlib-fulltext-reports/staged-promotion-report.json
+      - --apply
+    volumes:
+      - ../../apps/platform-api/scripts:/app/scripts:ro
+      - ../../apps/platform-api/src:/app/src:ro
+      - ../../data/fulltext-ingestion:/smartlib-fulltext-reports
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  platform-api:
+    build:
+      context: ../../apps/platform-api
+      dockerfile: Dockerfile
+      args:
+        PYTHON_IMAGE: ${SMARTLIB_PYTHON_IMAGE:-public.ecr.aws/docker/library/python:3.14.7-slim-bookworm}
+        SMARTLIB_PIP_INDEX_URL: ${SMARTLIB_PIP_INDEX_URL:-https://pypi.org/simple}
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    environment:
+      SMARTLIB_DATABASE_URL: postgresql://smartlib_api:${SMARTLIB_DB_API_PASSWORD:?Set SMARTLIB_DB_API_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_DEV_ACTOR_ID: ${SMARTLIB_DEV_ACTOR_ID:-00000000-0000-4000-8000-000000000001}
+      SMARTLIB_ENVIRONMENT: ${SMARTLIB_ENVIRONMENT:-development}
+      SMARTLIB_SEARCH_BACKEND: ${SMARTLIB_SEARCH_BACKEND:-postgres}
+      SMARTLIB_OPENSEARCH_URL: ${SMARTLIB_OPENSEARCH_URL:-http://opensearch:9200}
+      SMARTLIB_OPENSEARCH_INDEX_ALIAS: ${SMARTLIB_OPENSEARCH_INDEX_ALIAS:-smartlib-knowledge-read}
+      SMARTLIB_GRAPH_BACKEND: ${SMARTLIB_GRAPH_BACKEND:-postgres}
+      SMARTLIB_HUGEGRAPH_URL: ${SMARTLIB_HUGEGRAPH_URL:-http://hugegraph:8080}
+      SMARTLIB_HUGEGRAPH_USER: ${SMARTLIB_HUGEGRAPH_USER:-admin}
+      SMARTLIB_HUGEGRAPH_PASSWORD: ${SMARTLIB_HUGEGRAPH_PASSWORD:?Set SMARTLIB_HUGEGRAPH_PASSWORD}
+      SMARTLIB_HUGEGRAPH_GRAPH: ${SMARTLIB_HUGEGRAPH_GRAPH:-hugegraph}
+      SMARTLIB_S3_ENDPOINT_URL: ${SMARTLIB_S3_ENDPOINT_URL:-http://minio:9000}
+      SMARTLIB_S3_PUBLIC_ENDPOINT_URL: ${SMARTLIB_S3_PUBLIC_ENDPOINT_URL:-http://localhost:19000}
+      SMARTLIB_S3_REGION: ${SMARTLIB_S3_REGION:-us-east-1}
+      SMARTLIB_S3_BUCKET: ${SMARTLIB_S3_BUCKET:-smartlib-publications}
+      SMARTLIB_S3_ACCESS_KEY: ${SMARTLIB_MINIO_ROOT_USER:?Set SMARTLIB_MINIO_ROOT_USER}
+      SMARTLIB_S3_SECRET_KEY: ${SMARTLIB_MINIO_ROOT_PASSWORD:?Set SMARTLIB_MINIO_ROOT_PASSWORD}
+      SMARTLIB_FULLTEXT_MAX_BYTES: ${SMARTLIB_FULLTEXT_MAX_BYTES:-104857600}
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      minio-init:
+        condition: service_completed_successfully
+    ports:
+      - "${SMARTLIB_API_PORT:-18081}:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/health/live')"]
+      interval: 10s
+      timeout: 3s
+      start_period: 10s
+      retries: 8
+    networks:
+      - smartlib-internal
+
+  search-projection-worker:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    environment:
+      SMARTLIB_PROJECTION_DATABASE_URL: postgresql://smartlib_projection_worker:${SMARTLIB_DB_PROJECTION_PASSWORD:?Set SMARTLIB_DB_PROJECTION_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_SEARCH_PROJECTION_TARGET: ${SMARTLIB_SEARCH_PROJECTION_TARGET:-postgres}
+      SMARTLIB_OPENSEARCH_URL: ${SMARTLIB_OPENSEARCH_URL:-http://opensearch:9200}
+      SMARTLIB_OPENSEARCH_WRITE_ALIAS: ${SMARTLIB_OPENSEARCH_WRITE_ALIAS:-smartlib-knowledge-write}
+    command: ["python", "-m", "smartlib_platform.projection.worker"]
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - smartlib-internal
+
+  opensearch:
+    image: ${SMARTLIB_OPENSEARCH_IMAGE:-opensearchproject/opensearch:3.8.0}
+    profiles: ["search-poc"]
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - smartlib-opensearch:/usr/share/opensearch/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:9200/_cluster/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 40s
+      retries: 12
+    networks:
+      - smartlib-internal
+
+  opensearch-init:
+    image: ${SMARTLIB_OPENSEARCH_IMAGE:-opensearchproject/opensearch:3.8.0}
+    profiles: ["search-poc"]
+    environment:
+      SMARTLIB_OPENSEARCH_URL: http://opensearch:9200
+    command: ["sh", "/smartlib-opensearch/bootstrap.sh"]
+    volumes:
+      - ../opensearch:/smartlib-opensearch:ro
+    depends_on:
+      opensearch:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  hugegraph:
+    image: ${SMARTLIB_HUGEGRAPH_IMAGE:-hugegraph/hugegraph:1.7.0}
+    profiles: ["graph-poc"]
+    environment:
+      PASSWORD: ${SMARTLIB_HUGEGRAPH_PASSWORD:?Set SMARTLIB_HUGEGRAPH_PASSWORD}
+    volumes:
+      - smartlib-hugegraph:/hugegraph-server/rocksdb-data
+    ports:
+      - "${SMARTLIB_HUGEGRAPH_PORT:-18082}:8080"
+    restart: unless-stopped
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8080/versions >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      start_period: 60s
+      retries: 30
+    networks:
+      - smartlib-internal
+
+  hugegraph-init:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["graph-poc"]
+    environment:
+      SMARTLIB_HUGEGRAPH_URL: ${SMARTLIB_HUGEGRAPH_URL:-http://hugegraph:8080}
+      SMARTLIB_HUGEGRAPH_USER: ${SMARTLIB_HUGEGRAPH_USER:-admin}
+      SMARTLIB_HUGEGRAPH_PASSWORD: ${SMARTLIB_HUGEGRAPH_PASSWORD:?Set SMARTLIB_HUGEGRAPH_PASSWORD}
+      SMARTLIB_HUGEGRAPH_GRAPH: ${SMARTLIB_HUGEGRAPH_GRAPH:-hugegraph}
+    command: ["python", "/smartlib-hugegraph/bootstrap.py"]
+    volumes:
+      - ../hugegraph:/smartlib-hugegraph:ro
+    depends_on:
+      hugegraph:
+        condition: service_healthy
+    restart: "no"
+    networks:
+      - smartlib-internal
+
+  hubble:
+    image: ${SMARTLIB_HUBBLE_IMAGE:-hugegraph/hubble:1.7.0}
+    profiles: ["graph-poc"]
+    depends_on:
+      hugegraph:
+        condition: service_healthy
+    ports:
+      - "${SMARTLIB_HUBBLE_PORT:-18088}:8088"
+    restart: unless-stopped
+    networks:
+      - smartlib-internal
+
+  graph-projection-worker:
+    image: smartlib/platform-api:${SMARTLIB_IMAGE_TAG:-local}
+    profiles: ["graph-poc"]
+    environment:
+      SMARTLIB_PROJECTION_DATABASE_URL: postgresql://smartlib_projection_worker:${SMARTLIB_DB_PROJECTION_PASSWORD:?Set SMARTLIB_DB_PROJECTION_PASSWORD}@postgres:5432/${SMARTLIB_DB_NAME:-smartlib}
+      SMARTLIB_HUGEGRAPH_URL: ${SMARTLIB_HUGEGRAPH_URL:-http://hugegraph:8080}
+      SMARTLIB_HUGEGRAPH_USER: ${SMARTLIB_HUGEGRAPH_USER:-admin}
+      SMARTLIB_HUGEGRAPH_PASSWORD: ${SMARTLIB_HUGEGRAPH_PASSWORD:?Set SMARTLIB_HUGEGRAPH_PASSWORD}
+      SMARTLIB_HUGEGRAPH_GRAPH: ${SMARTLIB_HUGEGRAPH_GRAPH:-hugegraph}
+    command: ["python", "-m", "smartlib_platform.projection.graph_worker"]
+    depends_on:
+      provision-api-role:
+        condition: service_completed_successfully
+      hugegraph-init:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    networks:
+      - smartlib-internal
+
+  web:
+    build:
+      context: ../../apps/web
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: ${SMARTLIB_NODE_IMAGE:-public.ecr.aws/docker/library/node:22-alpine}
+        NGINX_IMAGE: ${SMARTLIB_NGINX_IMAGE:-public.ecr.aws/docker/library/nginx:1.28-alpine}
+        VITE_SMARTLIB_DEMO_MODE: ${SMARTLIB_WEB_DEMO_MODE:-true}
+    image: smartlib/web:${SMARTLIB_IMAGE_TAG:-local}
+    depends_on:
+      platform-api:
+        condition: service_healthy
+    ports:
+      - "${SMARTLIB_WEB_PORT:-18080}:8080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/healthz"]
+      interval: 10s
+      timeout: 3s
+      start_period: 5s
+      retries: 6
+    networks:
+      - smartlib-internal
+
+networks:
+  smartlib-internal:
+    name: smartlib-internal
+
+volumes:
+  smartlib-postgres:
+    name: smartlib-postgres
+  smartlib-opensearch:
+    name: smartlib-opensearch
+  smartlib-hugegraph:
+    name: smartlib-hugegraph
+  smartlib-minio:
+    name: smartlib-minio

@@ -1,0 +1,9 @@
+{
+  "version": "请填写官方目录版本",
+  "source_url": "https://www.moe.gov.cn/请替换为实际官方文件页面",
+  "verified_against_official": false,
+  "terms": [
+    {"code": "EXAMPLE", "name": "请替换为官方一级名称", "parent_code": null},
+    {"code": "EXAMPLE01", "name": "请替换为官方下级名称", "parent_code": "EXAMPLE"}
+  ]
+}

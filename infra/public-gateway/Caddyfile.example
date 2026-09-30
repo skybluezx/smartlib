@@ -1,0 +1,65 @@
+{
+    admin off
+    persist_config off
+    # IP clients commonly omit SNI; select the IP certificate explicitly.
+    default_sni __PUBLIC_HOST__
+    servers {
+        protocols h1 h2
+        timeouts {
+            read_header 15s
+            idle 2m
+        }
+    }
+}
+
+# HTTP never serves the application or requests a password.
+http://__PUBLIC_HOST__ {
+    redir https://__PUBLIC_HOST__{uri} 308
+}
+
+https://__PUBLIC_HOST__ {
+    tls {
+        issuer acme {
+            dir https://acme-v02.api.letsencrypt.org/directory
+            profile shortlived
+        }
+    }
+
+    header {
+        -Server
+        X-Content-Type-Options nosniff
+        X-Frame-Options DENY
+        Content-Security-Policy "frame-ancestors 'none'"
+        Referrer-Policy same-origin
+        Cache-Control "private, no-store"
+        Strict-Transport-Security "max-age=2592000"
+    }
+
+    # Cover every page, asset, download and API, with no public bypass.
+    basic_auth bcrypt SmartLib {
+        __ACCESS_USER__ __BCRYPT_HASH__
+    }
+
+    # Browsers cache Basic credentials. Reject cross-site state changes.
+    @foreignOrigin {
+        method POST PUT PATCH DELETE
+        header Origin *
+        not header Origin https://__PUBLIC_HOST__
+    }
+    respond @foreignOrigin "Cross-origin writes are not allowed" 403
+    @crossSite {
+        method POST PUT PATCH DELETE
+        header Sec-Fetch-Site cross-site
+    }
+    respond @crossSite "Cross-site writes are not allowed" 403
+
+    reverse_proxy 127.0.0.1:18080 {
+        header_up -Authorization
+        header_up -X-SmartLib-Actor-Id
+        header_up -Forwarded
+        transport http {
+            dial_timeout 10s
+            response_header_timeout 300s
+        }
+    }
+}

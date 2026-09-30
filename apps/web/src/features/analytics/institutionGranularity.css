@@ -1,0 +1,24 @@
+.sg-institution-granularity {background: white; padding: 1.5rem 2rem; border-bottom: 1px solid #c6c6c6;}
+.sg-institution-granularity h3 {font-size:1.1rem;margin-bottom:1rem;}
+.sg-institution-granularity-fields {display:grid;grid-template-columns:minmax(200px,1fr) minmax(260px,2fr) auto;gap:1rem;align-items:end;}
+.sg-institution-granularity-fields > * {min-width:0;}
+.sg-institution-note {display:flex;gap:.5rem;color:#525252;font-size:.875rem;line-height:1.6;margin-top:1rem;}
+.sg-institution-note svg {flex-shrink:0;color:#007d79;margin-top:.2rem;}
+.sg-institution-groups {margin-top:1.5rem;padding-top:1rem;border-top:1px solid #e0e0e0;}
+.sg-institution-groups h4 {margin-bottom:1rem;}
+.sg-institution-group-row {display:flex;gap:1rem;align-items:center;padding:.6rem 0;border-bottom:1px solid #e0e0e0;}
+.sg-institution-group-row span {flex:1;}
+.sg-institution-applied {display:flex;flex-wrap:wrap;gap:1.5rem;padding-top:1rem;font-size:.875rem;}
+.sg-institution-granularity details {margin-top:.75rem;font-size:.875rem;}
+.sg-institution-granularity details a {display:block;line-height:1.8;}
+@media(max-width:800px){.sg-institution-granularity-fields{grid-template-columns:1fr;}}
+.sg-institution-mode-fields {grid-template-columns:minmax(220px,1fr) minmax(300px,2fr);}
+.sg-institution-step {font-size:1rem;font-weight:600;margin:0 0 1rem;display:flex;align-items:center;gap:.75rem;}
+.sg-institution-step span {font-size:.75rem;font-weight:400;color:#525252;border-radius:1rem;background:#e8e8e8;padding:.2rem .65rem;}
+.sg-institution-group-help {font-size:.875rem;color:#525252;margin:0 0 1rem;line-height:1.6;}
+.sg-institution-config-actions {display:flex;align-items:center;justify-content:space-between;gap:1.5rem;border-top:1px solid #c6c6c6;margin-top:1.5rem;padding:1.25rem 0;}
+.sg-institution-config-status {display:flex;flex-direction:column;gap:.4rem;font-size:.875rem;line-height:1.5;}
+.sg-institution-config-status span {color:#525252;}
+.sg-institution-config-buttons {display:flex;gap:.5rem;flex-shrink:0;}
+.sg-institution-applied {border-top:1px solid #e0e0e0;color:#525252;}
+@media(max-width:800px){.sg-institution-mode-fields{grid-template-columns:1fr;}.sg-institution-config-actions{align-items:stretch;flex-direction:column;}.sg-institution-config-buttons{justify-content:flex-end;flex-wrap:wrap;}.sg-institution-group-row{flex-wrap:wrap;}}

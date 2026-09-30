@@ -1,0 +1,47 @@
+{
+  "index_patterns": ["smartlib-knowledge-v1-*"],
+  "priority": 100,
+  "_meta": {
+    "owner": "SmartLib Knowledge Platform",
+    "projection_version": "search-document-v1",
+    "note": "embedding_poc is four-dimensional only for engine mechanics; it is not a relevance model decision"
+  },
+  "template": {
+    "settings": {
+      "index": {
+        "knn": true,
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+      }
+    },
+    "mappings": {
+      "dynamic": "strict",
+      "properties": {
+        "object_id": {"type": "keyword"},
+        "object_type": {"type": "keyword"},
+        "canonical_name": {
+          "type": "text",
+          "analyzer": "cjk",
+          "fields": {"raw": {"type": "keyword", "ignore_above": 500}}
+        },
+        "aliases": {"type": "text", "analyzer": "cjk"},
+        "description": {"type": "text", "analyzer": "cjk"},
+        "visibility": {"type": "keyword"},
+        "created_by": {"type": "keyword"},
+        "policy_tags": {"type": "keyword"},
+        "object_version": {"type": "long"},
+        "policy_version": {"type": "keyword"},
+        "projection_version": {"type": "keyword"},
+        "source_updated_at": {"type": "date"},
+        "projected_at": {"type": "date"},
+        "embedding_poc": {
+          "type": "knn_vector",
+          "dimension": 4,
+          "space_type": "cosinesimil",
+          "method": {"name": "hnsw", "engine": "lucene"}
+        }
+      }
+    }
+  }
+}
+

@@ -1,0 +1,29 @@
+.sg-community-research { min-width:0; }
+.sg-community-research .sg-metric-note { display:flex; align-items:flex-start; gap:.5rem; line-height:1.6; }
+.sg-community-research .sg-metric-note svg { flex-shrink:0; margin-top:.25rem; }
+.sg-community-research-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); margin:1rem 0; background:#f4f4f4; }
+.sg-community-research-summary > div { padding:1rem; border-right:1px solid #e0e0e0; }
+.sg-community-research-summary dt { font-size:.8125rem; color:#525252; }
+.sg-community-research-summary dd { margin-top:.5rem; font-size:1.4rem; }
+.sg-community-research-controls { display:grid; grid-template-columns:1fr 1fr 1fr; gap:1rem; align-items:end; margin:1rem 0; }
+.sg-community-research-tabs { display:flex; flex-wrap:wrap; margin:1rem 0; border-bottom:1px solid #c6c6c6; }
+.sg-community-research > p { line-height:1.6; margin:.75rem 0; }
+.sg-community-research-scroll { max-height:30rem; overflow:auto; border:1px solid #e0e0e0; margin:1rem 0; }
+.sg-community-research-scroll table { min-width:48rem; }
+.sg-community-research-scroll th { position:sticky; top:0; z-index:1; }
+.sg-community-research-scroll td { overflow-wrap:normal !important; min-width:8rem; }
+.sg-community-research-scroll td small { display:block; color:#6f6f6f; }
+.sg-community-paper-evidence { max-height:12rem; overflow:auto; max-width:30rem; }
+.sg-community-paper-evidence p { margin:.5rem 0; line-height:1.5; }
+.sg-community-research code { overflow-wrap:anywhere; }
+@media(max-width:800px) { .sg-community-research-summary { grid-template-columns:repeat(2,minmax(0,1fr)); } .sg-community-research-controls { grid-template-columns:1fr; } }
+.sg-community-research-scroll th, .sg-community-research-scroll summary { white-space:nowrap; }
+
+.sg-community-comparison-settings { padding: 1rem 2rem; }
+.sg-community-comparison-settings .cds--select { max-width: 28rem; }
+.sg-community-comparison-settings .sg-metric-note { margin: 1rem 0 0; }
+.sg-community-summary-table .sg-community-leading-direction { min-width: 14rem; max-width: 24rem; white-space: normal; overflow-wrap: anywhere; }
+.sg-funding-category-counts { margin-top:.5rem; }
+.sg-funding-category-counts .sg-community-coverage { white-space:nowrap; line-height:1.5; margin-top:.2rem; }
+
+.sg-community-member-metrics { max-height:28rem; overflow:auto; }

@@ -1,0 +1,12 @@
+# Local QA overlay: reuse already-built images while mounting the current source/build output.
+# Do not use this overlay for shared, staging or production deployment.
+services:
+  platform-api:
+    volumes:
+      - ../../apps/platform-api/src:/app/src:ro
+  graph-projection-worker:
+    volumes:
+      - ../../apps/platform-api/src:/app/src:ro
+  web:
+    volumes:
+      - ../../apps/web/dist:/usr/share/nginx/html:ro

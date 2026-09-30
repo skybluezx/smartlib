@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling==1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "smartlib-platform-api"
+version = "0.1.0"
+description = "SmartLib authoritative platform API"
+requires-python = ">=3.14,<3.15"
+dependencies = [
+  "fastapi==0.141.1",
+  "httpx==0.28.1",
+  "networkx==3.6.1",
+  "python-multipart==0.0.32",
+  "pydantic==2.13.4",
+  "psycopg[binary]==3.3.4",
+  "psycopg-pool==3.3.1",
+  "pypinyin==0.55.0",
+  "uvicorn==0.52.4",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest==9.1.1",
+  "ruff==0.16.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/smartlib_platform"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py314"
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "RUF"]

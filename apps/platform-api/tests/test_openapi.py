@@ -1,0 +1,56 @@
+from smartlib_platform.entrypoints.http import app
+
+
+def test_public_operations_have_stable_operation_ids() -> None:
+    assert app.openapi()["info"]["version"] == "1.0.0-alpha.20"
+    operation_ids = {
+        operation["operationId"] for path in app.openapi()["paths"].values() for operation in path.values()
+    }
+    assert {
+        "list_sources",
+        "create_source",
+        "list_knowledge_objects",
+        "list_knowledge_object_catalog",
+        "get_organization_hierarchy_options",
+        "read_knowledge_object_resource_content",
+        "create_knowledge_object",
+        "get_knowledge_object",
+        "get_job_status",
+        "search_knowledge",
+        "create_evidence_record",
+        "create_relation_assertion",
+        "get_knowledge_neighborhood",
+        "find_knowledge_paths",
+        "explain_relation",
+        "get_governance_dashboard",
+        "get_governance_summary",
+        "list_governance_license_grants",
+        "list_governance_quality_issues",
+        "list_governance_review_tasks",
+        "create_governance_review_task",
+        "decide_governance_review_task",
+        "list_governance_audit_events",
+        "get_governance_data_asset_trace",
+        "get_governance_knowledge_object_provenance",
+        "list_journal_metric_releases",
+        "list_publication_journal_metrics",
+        "search_scholars",
+        "get_scholar_profile",
+        "get_scholar_network",
+        "get_scholar_evidence",
+        "get_scholar_graph_analytics",
+        "get_knowledge_hub_session",
+        "get_knowledge_hub_overview",
+        "list_publication_verifications",
+        "create_publication_import",
+        "create_publication_batch_import",
+        "get_publication_verification",
+        "confirm_publication_verification",
+        "reject_publication_verification",
+        "get_publication_incremental_status",
+        "list_publication_supplements",
+        "list_publication_fulltexts",
+        "upload_publication_fulltext",
+        "submit_publication_supplement",
+        "decide_publication_supplement",
+    } <= operation_ids

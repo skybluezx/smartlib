@@ -1,0 +1,15 @@
+# Initial single-server deployment overlay.
+# Keeps this stack's persistent state and network isolated from older SmartLib services.
+networks:
+  smartlib-internal:
+    name: smartlib-kp-internal
+
+volumes:
+  smartlib-postgres:
+    name: smartlib-kp-postgres
+  smartlib-opensearch:
+    name: smartlib-kp-opensearch
+  smartlib-hugegraph:
+    name: smartlib-kp-hugegraph
+  smartlib-minio:
+    name: smartlib-kp-minio

@@ -1,0 +1,17 @@
+.sg-funding-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); gap: 16px; align-items: start; padding: 0 24px 24px; }
+.sg-funding-layout > * { min-width: 0; }
+.sg-funding-expand { border: 0; padding: 0; background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; line-height: 1.5; }
+.sg-funding-expand:focus-visible { outline: 2px solid #0f62fe; outline-offset: 4px; }
+.sg-funding-project-details { padding: 12px 20px; border-left: 2px solid #dce3ec; background: #fafbfc; }
+.sg-funding-project-details[hidden] { display: none !important; }
+.sg-funding-project-details p { font-size: 12px; color: #59636e; margin: 0 0 10px; }
+.sg-funding-project-details ul { list-style: none; padding: 0; max-height: 480px; overflow-y: auto; }
+.sg-funding-project-details li { padding: 12px 0; border-bottom: 1px solid #e1e5eb; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
+.sg-funding-project-details small { display: block; color: #59636e; }
+.sg-funding-layout .sg-funding-list-title { padding: 12px 0; }
+.sg-funding-layout .sg-funding-list-title small { margin-left: 8px; }
+.sg-funding-layout .sg-funding-coverage-list { padding: 0; }
+.sg-funding-layout .sg-funding-coverage-list article { grid-template-columns: minmax(0, 1fr) 5rem 3rem; gap: 8px; min-height: 64px; padding: 10px 12px; margin-bottom: 6px; }
+.sg-funding-layout .sg-funding-coverage-list article > span { grid-template-columns: 1.5rem minmax(0, 1fr); }
+.sg-funding-layout .sg-funding-coverage-list article > em { display: block; }
+@media (max-width: 1000px) { .sg-funding-layout { grid-template-columns: 1fr; } }

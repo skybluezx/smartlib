@@ -1,0 +1,187 @@
+version: 1
+capabilities:
+  - id: list_sources
+    mode: synchronous
+    risk: read
+    rest: GET /api/v1/sources
+    future_adapters: [sdk, mcp_resource]
+  - id: create_source
+    mode: synchronous
+    risk: governed_write
+    rest: POST /api/v1/sources
+    future_adapters: [sdk, mcp_tool]
+  - id: list_knowledge_objects
+    mode: synchronous
+    risk: read
+    rest: GET /api/v1/objects
+    future_adapters: [sdk, mcp_resource, skill]
+  - id: create_knowledge_object
+    mode: synchronous
+    risk: governed_write
+    rest: POST /api/v1/objects
+    future_adapters: [sdk, mcp_tool]
+  - id: get_object_profile
+    mode: synchronous
+    risk: read
+    rest: GET /api/v1/objects/{object_id}
+    future_adapters: [sdk, mcp_resource, agent_tool]
+  - id: get_job_status
+    mode: synchronous
+    risk: read
+    rest: GET /api/v1/jobs/{job_id}
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+  - id: search_knowledge
+    mode: synchronous
+    risk: governed_read
+    rest: POST /api/v1/search
+    future_adapters: [sdk, mcp_tool, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - trusted_identity_and_purpose_context
+      - pre_retrieval_policy_filter
+      - post_retrieval_policy_check
+      - no_unauthorized_counts_or_facets
+      - evidence_and_projection_version_preserved
+  - id: create_evidence_record
+    mode: synchronous
+    risk: governed_write
+    rest: POST /api/v1/objects/{object_id}/evidence
+    future_adapters: [sdk, mcp_tool]
+    invariants:
+      - evidence_origin_and_license_preserved
+      - trusted_actor_context
+  - id: create_relation_assertion
+    mode: synchronous
+    risk: governed_write
+    rest: POST /api/v1/relations
+    future_adapters: [sdk, mcp_tool, skill, agent_tool]
+    invariants:
+      - canonical_relation_remains_in_postgres
+      - evidence_and_fact_class_preserved
+      - transactional_outbox
+  - id: get_knowledge_neighborhood
+    mode: synchronous
+    risk: governed_read
+    rest: POST /api/v1/graph/neighborhood
+    future_adapters: [sdk, mcp_tool, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - trusted_identity_and_purpose_context
+      - every_node_and_edge_pre_filtered
+      - post_traversal_policy_check
+      - no_hidden_counts_or_path_existence
+  - id: find_knowledge_paths
+    mode: synchronous
+    risk: governed_read
+    rest: POST /api/v1/graph/paths
+    future_adapters: [sdk, mcp_tool, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - bounded_server_side_path_depth
+      - every_intermediate_node_and_edge_authorized
+      - evidence_and_projection_version_preserved
+      - no_raw_graph_dsl
+  - id: explain_relation
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/relations/{relation_id}/explanation
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+    invariants:
+      - evidence_identifiers_are_permission_filtered
+      - fact_class_and_review_state_preserved
+  - id: get_governance_dashboard
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/dashboard
+    future_adapters: [sdk, mcp_resource, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - summary_is_computed_after_rls
+      - synthetic_state_is_explicit
+      - no_frontend_fixed_counts
+  - id: get_governance_summary
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/summary
+    future_adapters: [sdk, mcp_resource, agent_tool]
+    invariants:
+      - visible_assets_only
+      - no_hidden_counts
+  - id: list_governance_license_grants
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/licenses
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+    invariants:
+      - only_current_approved_grants_allow
+      - unknown_pending_suspended_rejected_or_expired_deny
+      - allowed_and_prohibited_purposes_preserved
+  - id: list_governance_quality_issues
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/quality-issues
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+    invariants:
+      - asset_rule_run_and_responsibility_preserved
+      - no_cross_actor_private_issue_leak
+  - id: list_governance_audit_events
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/audit-events
+    future_adapters: [sdk, mcp_resource]
+    invariants:
+      - current_actor_events_only
+      - raw_audit_table_not_readable_by_application
+      - audit_events_are_append_only
+  - id: get_governance_data_asset_trace
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/assets/{data_asset_id}/trace
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+    invariants:
+      - domain_source_version_contract_and_steward_preserved
+      - hidden_asset_returns_not_found
+  - id: get_governance_knowledge_object_provenance
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/governance/objects/{object_id}/provenance
+    future_adapters: [sdk, mcp_resource, skill, agent_tool]
+    invariants:
+      - source_references_and_evidence_are_rls_filtered
+      - object_version_preserved
+  - id: search_scholars
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/scholars
+    future_adapters: [sdk, mcp_resource, skill, mini_program, native_client]
+    invariants:
+      - canonical_person_objects_only
+      - visible_relations_define_filters_and_counts
+      - synthetic_state_and_object_version_preserved
+      - no_ranking_or_evaluation_score
+  - id: get_scholar_profile
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/scholars/{scholar_id}
+    future_adapters: [sdk, mcp_resource, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - public_scholar_id_resolves_within_current_visibility
+      - fact_profile_is_distinct_from_analysis_and_task_profiles
+      - metrics_derive_from_visible_approved_relations
+      - object_relation_and_dataset_versions_preserved
+  - id: get_scholar_network
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/scholars/{scholar_id}/network
+    future_adapters: [sdk, mcp_tool, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - public_scholar_id_resolves_within_current_visibility
+      - delegates_to_bounded_graph_port
+      - every_node_edge_and_evidence_is_permission_filtered
+      - no_raw_graph_dsl
+  - id: get_scholar_evidence
+    mode: synchronous
+    risk: governed_read
+    rest: GET /api/v1/scholars/{scholar_id}/evidence
+    future_adapters: [sdk, mcp_resource, skill, agent_tool, mini_program, native_client]
+    invariants:
+      - public_scholar_id_resolves_within_current_visibility
+      - source_reference_and_relation_context_preserved
+      - unavailable_evidence_is_not_invented
+      - synthetic_and_dataset_version_preserved
